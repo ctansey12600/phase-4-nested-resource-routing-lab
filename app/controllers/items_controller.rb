@@ -3,7 +3,7 @@ class ItemsController < ApplicationController
 
   def index
     if params[:user_id]
-      user = User.find(params[:user_id])
+      user = find_user
       items = user.items
     else
       items = Item.all
@@ -12,28 +12,31 @@ class ItemsController < ApplicationController
   end
 
   def show
-    item = Item.find(params[:id])
-    render json: item, include: :user, status: :ok
+    item = find_item
+    render json: item, status: :ok
   end
 
   def create
-    if params[:user_id]
-      user = User.find(params[:user_id])
-      item = Item.new(item_params)
-      user.items << item
-    else
-      item = Item.create(item_params)
-    end
-    render json: item, include: :user, status: :created
+    user = find_user
+    item = user.items.create(item_params)
+    render json: item, status: :created
   end
 
   private
 
-  def render_not_found_response
-    render json: { error: "Item not found" }, status: :not_found
+  def find_item
+    Item.find(params[:id])
+  end
+
+  def find_user
+    User.find(params[:user_id])
   end
 
   def item_params
     params.permit(:name, :description, :price)
+  end
+
+  def render_not_found_response(exception)
+    render json: { error: "#{exception.model} not found" }, status: :not_found
   end
 end
